@@ -11,19 +11,19 @@ import rasterio
 from affine import Affine
 import pyproj
 import proj
+import rioxarray as rxr
 
 # import Canadian fuel data
 canadian_file_path = "data/nat_fbpfuels_2014b.tif"
 cdata = xr.open_rasterio(canadian_file_path)
-
-# transform to match US
 print(cdata)
+# transform to match US
 p1 = pyproj.Proj(cdata.crs)
 #todo: automate parameters below from adata
-p2 = pyproj.Proj("+proj=lcc +lat_0=40 +lon_0=-100 +lat_1=33 +lat_2=45")
-(newx, newy) = pyproj.transform(p1, p2, cdata.x[0:np.size(cdata.y)], cdata.y) #wrong but for proof of concept
-print(newx)
-print(newy)
+p2 = pyproj.Proj("+proj=lcc +lat_1=33 +lat_0=40 +lon_0=-100  +lat_2=45")
+cdata.rio.reproject(p2)
+print("REPROJECTED:")
+print(cdata)
 
 # convert Canadian fuel types to American
 
@@ -45,8 +45,8 @@ adata = adata.assign_coords(ROW=ycoords)
 
 print("FUELLOADING: ")
 #print(adata)
-adata.plot()
-plt.savefig('UStestfig.png')
+#adata.plot()
+#plt.savefig('UStestfig.png')
 
 # combine datasets
 
