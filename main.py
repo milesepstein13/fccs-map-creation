@@ -16,7 +16,7 @@ import rioxarray as rxr
 # import Canadian fuel data
 canadian_file_path = "data/nat_fbpfuels_2014b.tif"
 cdata = xr.open_rasterio(canadian_file_path)
-print(cdata)
+print(cdata.attrs)
 # transform to match US
 p1 = pyproj.Proj(cdata.crs)
 #todo: automate parameters below from adata
