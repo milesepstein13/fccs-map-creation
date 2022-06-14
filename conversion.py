@@ -18,7 +18,7 @@ import rioxarray as rxr
 # 
 ca_to_us_fuelbeds = {
     # key values from metadata of Canadian fuel data
-    0: 0, # Out of domain
+    0: -9999, # Out of domain
     101: 85, # C1 - Spruce–Lichen Woodland -> 85 - black spruce/lichen forest
     102: 87, # C2 - Boreal Spruce -> 87 - Black spruce/feathermoss forest
     103: 22, # C3 - Mature Jack or Lodgepole Pine -> 22 - Mature lodgepole pine forest (146 for jack, but lodgepole is more common than jack in Western Canada)
@@ -53,6 +53,7 @@ def fuelbed_convert(canadian_fuelbed, x, y):
 canadian_file_path = "data/nat_fbpfuels_2014b.tif"
 cdata = xr.open_rasterio(canadian_file_path)
 print("CANADA: ")
+print(cdata)
 
 # plot piece of initial data for comparision
 print("Plotting initial")
@@ -60,32 +61,53 @@ cdata[0, 13000:14000, 2000:2500].plot() # full size doesn't resolve, too big
 plt.savefig("CApre.png")
 
 # convert FBP fuel types to FCCS
-for x in range(cdata.x.size):
-    for y in range(cdata.y.size):
-        data = cdata.data
-        data[0, y, x] = fuelbed_convert(data[0, y, x], x, y)
-        cdata.data = data
+#for x in range(cdata.x.size):
+#    for y in range(cdata.y.size):
+#        data = cdata.data
+#       data[0, y, x] = fuelbed_convert(data[0, y, x], x, y)
+#        cdata.data = data
 # smaller range for testing:
-# print("Converting fuelbeds")
-#or x in range(13000, 14000):
-#    for y in range(2000, 2500):
-#        cdata.data[0, x, y] = fuelbed_convert(cdata.data[0, x, y], x, y)
+print("Converting fuelbeds")
+for x in range(13000, 14000):
+    for y in range(2000, 2500):
+        cdata.data[0, x, y] = fuelbed_convert(cdata.data[0, x, y], x, y)
+print("new data")
+print(cdata)
 print("plotting final")
 plt.clf()
 cdata[0, 13000:14000, 2000:2500].plot() # full size doesn't resolve, too big
 plt.savefig("CApost.png")
-cdata.to_netcdf("data/fccs_canada.nc")
+
+print("CONVERTING array to dataset")
+# convert from dataarray to dataset (so it's like american data)
+cdataset = cdata[0, :, :].to_dataset(name = "Band1")
+
+# import American fuel data to use as reference
+american_file_path = "data/fccs_fuelload.nc"
+adataset = xr.open_dataset(american_file_path)
+
+cdataset.attrs['Conventions'] = adataset.attrs['Conventions']
+
+print("Converting metadata")
+lcc = adataset.lambert_conformal_conic 
+lcc.attrs['Northernmost_Northing'] = cdata.y.values[0]
+lcc.attrs['Southernmost_Northing'] = cdata.y.values[-1]
+lcc.attrs['Easternmost_Easting'] = cdata.x.values[-1]
+lcc.attrs['Westernmost_Easting'] = cdata.x.values[0]
+#lcc.spatial_ref = ?
+#lcc.GeoTransform = ?
+lcc.attrs['central_meridian'] = -95
+lcc.attrs['standard_parallel_1'] = 49
+lcc.attrs['standard_parallel_2'] = 77
+lcc.attrs['latitude_of_projection_origin'] = 49
+
+cdataset = cdataset.assign(lambert_conformal_conic = lcc)
 
 
-# import American fuel data
-# american_file_path = "data/fccs_fuelload.nc"
-# adata = xr.open_dataset(american_file_path)
-# print("AMERICA: ", adata)
+print(cdata.crs)
 
-#import Alaskan fuel data
-#alaskan_file_path = "data/FCCS_Alaska.nc"
-#akdata = xr.open_dataset(alaskan_file_path)
-#print("ALASKA: ", akdata)
-#print(akdata.attrs)
-#akdata.Band1.plot()
-#plt.savefig('AKtestfig.png')
+
+
+#plt.clf()
+#cdataset.Band1[0, 13000:14000, 2000:2500].plot() # full size doesn't resolve, too big
+#plt.savefig("CAdataset.png")
