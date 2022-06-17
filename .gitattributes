@@ -1,2 +1,0 @@
-data/nat_fbpfuels_2014b.tif filter=lfs diff=lfs merge=lfs -text
-data/fccs_canada.nc filter=lfs diff=lfs merge=lfs -text
