@@ -24,10 +24,13 @@ cdata = xr.open_rasterio("data/nat_fbpfuels_2014b.tif")
 percent = np.count_nonzero(cdata)/np.size(cdata)
 #print(percent)
 print(cdata)
+print("RESAMPLING")
+cdata = cdata.reindex(y = cdata.y[::2], x = cdata.x[::2], method = 'nearest')
+print(cdata)
 #print("Point:")
 #print(cdata[0, 1000, 10001].data)
-#cdata[0, 13000:14000, 2000:2500].plot() # full size doesn't resolve, too big
-#plt.savefig("CAtestfig.png")
+cdata[0, 6500:7000, 1000:1250].plot() # full size doesn't resolve, too big
+plt.savefig("CAtestfig.png")
 
 
 

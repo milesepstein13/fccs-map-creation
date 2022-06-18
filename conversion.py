@@ -20,7 +20,7 @@ import gdal
 # 
 ca_to_us_fuelbeds = {
     # key values from metadata of Canadian fuel data
-    0: -9999, # Out of domain
+    0: nan, # Out of domain
     101: 85, # C1 - Spruce–Lichen Woodland -> 85 - black spruce/lichen forest
     102: 87, # C2 - Boreal Spruce -> 87 - Black spruce/feathermoss forest
     103: 22, # C3 - Mature Jack or Lodgepole Pine -> 22 - Mature lodgepole pine forest (146 for jack, but lodgepole is more common than jack in Western Canada)
@@ -65,6 +65,9 @@ print("Plotting initial")
 cdata[0, 13000:14000, 2000:2500].plot() # full size doesn't resolve, too big
 plt.savefig("CApre.png")
 
+# resample
+cdata = cdata.reindex(y = cdata.y[::4], x = cdata.x[::4], method = 'nearest')
+
 # convert FBP fuel types to FCCS
 for x in range(cdata.x.size):
     for y in range(cdata.y.size):
@@ -73,14 +76,14 @@ for x in range(cdata.x.size):
         cdata.data = data
 # smaller range for testing:
 print("Converting fuelbeds")
-#for x in range(13000, 14000):
-#    for y in range(2000, 2500):
+#for x in range(3250, 3500):
+#    for y in range(500, 625):
 #        cdata.data[0, x, y]  = fuelbed_convert(cdata.data[0, x, y], x, y)        
 print("new data")
 print(cdata)
 print("plotting final converted")
 plt.clf()
-cdata[0, 13000:14000, 2000:2500].plot() # full size doesn't resolve, too big
+cdata[0, 3250:3500, 500:625].plot() # full size doesn't resolve, too big
 plt.savefig("CApost.png")
 
 print("CONVERTING array to dataset")
@@ -102,7 +105,8 @@ lcc.attrs['Easternmost_Easting'] = cdata.x.values[-1]
 lcc.attrs['Westernmost_Easting'] = cdata.x.values[0]
 lcc.attrs['spatial_ref'] = CRS.from_proj4(cdata.attrs['crs']).to_wkt()
 g = gdal.Open(canadian_file_path)
-lcc.attrs['GeoTransform'] = g.GetGeoTransform()
+geotransform = ([g.GetGeoTransform()[0], g.GetGeoTransform()[1] * 4, g.GetGeoTransform()[2], g.GetGeoTransform()[3], g.GetGeoTransform()[4], g.GetGeoTransform()[5]*4])
+lcc.attrs['GeoTransform'] = geotransform
 lcc.attrs['central_meridian'] = -95
 lcc.attrs['standard_parallel_1'] = 49
 lcc.attrs['standard_parallel_2'] = 77
@@ -111,6 +115,9 @@ cdataset = cdataset.assign_coords(lambert_conformal_conic = lcc)
 cdataset = cdataset.drop_vars('band')
 cdataset = cdataset.drop_vars('x')
 cdataset = cdataset.drop_vars('y')
+print("spatial_ref", lcc.attrs['spatial_ref'])
+print("geotransform", lcc.attrs['GeoTransform'])
+
 
 print("savings as netcdf")
 # save as netcdf
@@ -118,5 +125,6 @@ cdataset.to_netcdf('data/fccs_canada.nc')
 
 # to see that dataset works
 plt.clf()
-cdataset.Band1[13000:15000, 2000:2500].plot() # full size doesn't resolve, too big
+cdataset.Band1[3250:3500, 500:625].plot() 
 plt.savefig("CAdataset.png")
+
