@@ -45,9 +45,18 @@ ca_to_us_fuelbeds = {
     122: 0 # Vegetated non-fuel -> 0 - No fuel
 }
 
+# Window to plot because full image is too large to resolve:
+xmin = 13000
+xmax = 14000
+ymin = 2000
+ymax = 2500
+
+# how much to scale image by. E.g. to change resolution from .25 km to 1 km, use scale factor 4
+scale_factor = 4
+
 def fuelbed_convert(canadian_fuelbed, x, y):
     #converts FBP fuel type to FCCS fueltype 
-    if ((x % 100 == 0) & (y == 2000)):
+    if ((x % 100 == 0) & (y == ymin)):
         print(x, y)
         print("canadian fuelbed", canadian_fuelbed)
         print("american fuelbed", ca_to_us_fuelbeds[canadian_fuelbed])
@@ -62,11 +71,11 @@ cdata = cdata.astype(np.float32)
 
 # plot piece of initial data for comparision
 print("Plotting initial")
-cdata[0, 13000:14000, 2000:2500].plot() # full size doesn't resolve, too big
+cdata[0, xmin:xmax, ymin:ymax].plot() # full size doesn't resolve, plot random section
 plt.savefig("CApre.png")
 
 # resample
-cdata = cdata.reindex(y = cdata.y[::4], x = cdata.x[::4], method = 'nearest')
+cdata = cdata.reindex(y = cdata.y[::scale_factor], x = cdata.x[::scale_factor], method = 'nearest')
 
 # convert FBP fuel types to FCCS
 for x in range(cdata.x.size):
@@ -76,14 +85,14 @@ for x in range(cdata.x.size):
         cdata.data = data
 # smaller range for testing:
 print("Converting fuelbeds")
-#for x in range(3250, 3500):
-#    for y in range(500, 625):
+#for x in range(xmin/scale_factor, xmax/scale_factor):
+#    for y in range(ymin/scale_factor, ymax/scale_factor):
 #        cdata.data[0, x, y]  = fuelbed_convert(cdata.data[0, x, y], x, y)        
 print("new data")
 print(cdata)
 print("plotting final converted")
 plt.clf()
-cdata[0, 3250:3500, 500:625].plot() # full size doesn't resolve, too big
+cdata[0, xmin/scale_factor:xmax/scale_factor, ymin/scale_factor:ymax/scale_factor].plot() # full size doesn't resolve, too big
 plt.savefig("CApost.png")
 
 print("CONVERTING array to dataset")
@@ -125,6 +134,6 @@ cdataset.to_netcdf('data/fccs_canada.nc')
 
 # to see that dataset works
 plt.clf()
-cdataset.Band1[3250:3500, 500:625].plot() 
+cdataset.Band1[xmin/scale_factor:xmax/scale_factor, ymin/scale_factor:ymax/scale_factor].plot() 
 plt.savefig("CAdataset.png")
 
