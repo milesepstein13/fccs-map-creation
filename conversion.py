@@ -83,16 +83,16 @@ plt.savefig("CApre.png")
 cdata = cdata.reindex(y = cdata.y[::scale_factor], x = cdata.x[::scale_factor], method = 'nearest')
 
 # convert FBP fuel types to FCCS
-for x in range(cdata.x.size):
-    for y in range(cdata.y.size):
-        data = cdata.data
-        data[0, y, x] = fuelbed_convert(data[0, y, x], x, y)
-        cdata.data = data
+#for x in range(cdata.x.size):
+#    for y in range(cdata.y.size):
+#        data = cdata.data
+#        data[0, y, x] = fuelbed_convert(data[0, y, x], x, y)
+#        cdata.data = data
 # smaller range for testing:
 print("Converting fuelbeds")
-#for x in range(xmin_scaled, xmax_scaled):
-#    for y in range(ymin_scaled, ymax_scaled):
-#        cdata.data[0, x, y]  = fuelbed_convert(cdata.data[0, x, y], x, y)        
+for x in range(xmin_scaled, xmax_scaled):
+    for y in range(ymin_scaled, ymax_scaled):
+        cdata.data[0, x, y]  = fuelbed_convert(cdata.data[0, x, y], x, y)        
 print("new data")
 print(cdata)
 print("plotting final converted")
@@ -107,7 +107,7 @@ cdataset = cdata[0, :, :].to_dataset(name = "Band1")
 
 # import American fuel data to use as reference
 american_file_path = "data/fccs_fuelload.nc"
-adataset = xr.open_dataset(american_file_path, decode_coords="all")
+adataset = xr.open_dataset(american_file_path)
 
 
 cdataset.attrs['Conventions'] = adataset.attrs['Conventions']
@@ -130,21 +130,25 @@ cdataset = cdataset.assign_coords(lambert_conformal_conic = lcc)
 cdataset = cdataset.drop_vars('band')
 cdataset = cdataset.drop_vars('x')
 cdataset = cdataset.drop_vars('y')
-print("spatial_ref", lcc.attrs['spatial_ref'])
-print("geotransform", lcc.attrs['GeoTransform'])
-print(cdataset.Band1.res)
-print(cdataset.Band1.transform)
-print(cdataset.Band1.attrs)
+#print("spatial_ref", lcc.attrs['spatial_ref'])
+#print("geotransform", lcc.attrs['GeoTransform'])
+#print(cdataset.Band1.res)
+#print(cdataset.Band1.transform)
+#print(cdataset.Band1.attrs)
+#print(adataset.FCCS_FuelLoading)
 
 reso = list((g.GetGeoTransform()[1] * scale_factor, g.GetGeoTransform()[5] * scale_factor))
 trans = list((g.GetGeoTransform()[1] * scale_factor, g.GetGeoTransform()[2], g.GetGeoTransform()[0], g.GetGeoTransform()[4], g.GetGeoTransform()[5]*scale_factor, g.GetGeoTransform()[3]))
-print(reso)
-print(trans)
+gm = adataset.FCCS_FuelLoading.attrs['grid_mapping']
+ln = adataset.FCCS_FuelLoading.attrs['long_name']
+
 cdataset['Band1'] = cdataset.Band1.assign_attrs(res=reso)
 cdataset['Band1'] = cdataset.Band1.assign_attrs(transform=trans)
-print("FINAL DATASET")
-print(cdataset.lambert_conformal_conic)
-print(cdataset.Band1)
+cdataset['Band1'] = cdataset.Band1.assign_attrs(grid_mapping=gm)
+cdataset['Band1'] = cdataset.Band1.assign_attrs(long_name=ln)
+#print("FINAL DATASET")
+#print(cdataset.lambert_conformal_conic)
+#print(cdataset.Band1)
 
 print("savings as netcdf")
 # save as netcdf
