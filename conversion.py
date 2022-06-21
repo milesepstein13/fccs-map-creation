@@ -83,16 +83,20 @@ plt.savefig("CApre.png")
 cdata = cdata.reindex(y = cdata.y[::scale_factor], x = cdata.x[::scale_factor], method = 'nearest')
 
 # convert FBP fuel types to FCCS
-#for x in range(cdata.x.size):
-#    for y in range(cdata.y.size):
-#        data = cdata.data
-#        data[0, y, x] = fuelbed_convert(data[0, y, x], x, y)
-#        cdata.data = data
-# smaller range for testing:
+test = False # True uses smaller range for testing (so conversion is not as slow):
+if test:
+    for x in range(xmin_scaled, xmax_scaled):
+        for y in range(ymin_scaled, ymax_scaled):
+            cdata.data[0, x, y]  = fuelbed_convert(cdata.data[0, x, y], x, y)  
+else:
+    for x in range(cdata.x.size):
+        for y in range(cdata.y.size):
+            data = cdata.data
+            data[0, y, x] = fuelbed_convert(data[0, y, x], x, y)
+        cdata.data = data
+
 print("Converting fuelbeds")
-for x in range(xmin_scaled, xmax_scaled):
-    for y in range(ymin_scaled, ymax_scaled):
-        cdata.data[0, x, y]  = fuelbed_convert(cdata.data[0, x, y], x, y)        
+      
 print("new data")
 print(cdata)
 print("plotting final converted")
