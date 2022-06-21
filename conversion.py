@@ -54,6 +54,11 @@ ymax = 2500
 # how much to scale image by. E.g. to change resolution from .25 km to 1 km, use scale factor 4
 scale_factor = 4
 
+xmin_scaled = int(xmin/scale_factor)
+xmax_scaled = int(xmax/scale_factor)
+ymin_scaled = int(ymin/scale_factor)
+ymax_scaled = int(ymax/scale_factor)
+
 def fuelbed_convert(canadian_fuelbed, x, y):
     #converts FBP fuel type to FCCS fueltype 
     if ((x % 100 == 0) & (y == ymin)):
@@ -85,14 +90,15 @@ for x in range(cdata.x.size):
         cdata.data = data
 # smaller range for testing:
 print("Converting fuelbeds")
-#for x in range(xmin/scale_factor, xmax/scale_factor):
-#    for y in range(ymin/scale_factor, ymax/scale_factor):
+#for x in range(xmin_scaled, xmax_scaled):
+#    for y in range(ymin_scaled, ymax_scaled):
 #        cdata.data[0, x, y]  = fuelbed_convert(cdata.data[0, x, y], x, y)        
 print("new data")
 print(cdata)
 print("plotting final converted")
 plt.clf()
-cdata[0, xmin/scale_factor:xmax/scale_factor, ymin/scale_factor:ymax/scale_factor].plot() # full size doesn't resolve, too big
+
+cdata[0, xmin_scaled:xmax_scaled, ymin_scaled:ymax_scaled].plot() # full size doesn't resolve, too big
 plt.savefig("CApost.png")
 
 print("CONVERTING array to dataset")
@@ -114,7 +120,7 @@ lcc.attrs['Easternmost_Easting'] = cdata.x.values[-1]
 lcc.attrs['Westernmost_Easting'] = cdata.x.values[0]
 lcc.attrs['spatial_ref'] = CRS.from_proj4(cdata.attrs['crs']).to_wkt()
 g = gdal.Open(canadian_file_path)
-geotransform = ([g.GetGeoTransform()[0], g.GetGeoTransform()[1] * 4, g.GetGeoTransform()[2], g.GetGeoTransform()[3], g.GetGeoTransform()[4], g.GetGeoTransform()[5]*4])
+geotransform = ([g.GetGeoTransform()[0], g.GetGeoTransform()[1] * scale_factor, g.GetGeoTransform()[2], g.GetGeoTransform()[3], g.GetGeoTransform()[4], g.GetGeoTransform()[5]*scale_factor])
 lcc.attrs['GeoTransform'] = geotransform
 lcc.attrs['central_meridian'] = -95
 lcc.attrs['standard_parallel_1'] = 49
@@ -126,7 +132,19 @@ cdataset = cdataset.drop_vars('x')
 cdataset = cdataset.drop_vars('y')
 print("spatial_ref", lcc.attrs['spatial_ref'])
 print("geotransform", lcc.attrs['GeoTransform'])
+print(cdataset.Band1.res)
+print(cdataset.Band1.transform)
+print(cdataset.Band1.attrs)
 
+reso = list((g.GetGeoTransform()[1] * scale_factor, g.GetGeoTransform()[5] * scale_factor))
+trans = list((g.GetGeoTransform()[1] * scale_factor, g.GetGeoTransform()[2], g.GetGeoTransform()[0], g.GetGeoTransform()[4], g.GetGeoTransform()[5]*scale_factor, g.GetGeoTransform()[3]))
+print(reso)
+print(trans)
+cdataset['Band1'] = cdataset.Band1.assign_attrs(res=reso)
+cdataset['Band1'] = cdataset.Band1.assign_attrs(transform=trans)
+print("FINAL DATASET")
+print(cdataset.lambert_conformal_conic)
+print(cdataset.Band1)
 
 print("savings as netcdf")
 # save as netcdf
@@ -134,6 +152,6 @@ cdataset.to_netcdf('data/fccs_canada.nc')
 
 # to see that dataset works
 plt.clf()
-cdataset.Band1[xmin/scale_factor:xmax/scale_factor, ymin/scale_factor:ymax/scale_factor].plot() 
+cdataset.Band1[xmin_scaled:xmax_scaled, ymin_scaled:ymax_scaled].plot() 
 plt.savefig("CAdataset.png")
 
