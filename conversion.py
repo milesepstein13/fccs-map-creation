@@ -15,6 +15,8 @@ import proj
 import rioxarray as rxr
 import gdal 
 
+# Author: Miles Epstein
+
 # determined manually with https://www.fs.usda.gov/pnw/tools/fuel-and-fire-tools-fft
 # based on canadian fuel types: https://cwfis.cfs.nrcan.gc.ca/background/fueltypes/c1
 # 
@@ -54,13 +56,14 @@ ymax = 2500
 # how much to scale image by. E.g. to change resolution from .25 km to 1 km, use scale factor 4
 scale_factor = 4
 
+# window to plot once scaled
 xmin_scaled = int(xmin/scale_factor)
 xmax_scaled = int(xmax/scale_factor)
 ymin_scaled = int(ymin/scale_factor)
 ymax_scaled = int(ymax/scale_factor)
 
 def fuelbed_convert(canadian_fuelbed, x, y):
-    #converts FBP fuel type to FCCS fueltype 
+    #converts FBP fueltype to FCCS fueltype by referencing dictionary defined above
     if ((x % 100 == 0) & (y == ymin)):
         print(x, y)
         print("canadian fuelbed", canadian_fuelbed)
@@ -70,8 +73,8 @@ def fuelbed_convert(canadian_fuelbed, x, y):
 # import Canadian fuel data
 canadian_file_path = "data/nat_fbpfuels_2014b.tif"
 cdata = xr.open_rasterio(canadian_file_path, decode_coords="all")
-print("CANADA: ")
-print(cdata)
+# print("CANADA: ")
+# print(cdata)
 cdata = cdata.astype(np.float32)
 
 # plot piece of initial data for comparision
@@ -79,11 +82,11 @@ print("Plotting initial")
 cdata[0, xmin:xmax, ymin:ymax].plot() # full size doesn't resolve, plot random section
 plt.savefig("CApre.png")
 
-# resample
+# downscale to change resolution
 cdata = cdata.reindex(y = cdata.y[::scale_factor], x = cdata.x[::scale_factor], method = 'nearest')
 
 # convert FBP fuel types to FCCS
-test = False # True uses smaller range for testing (so conversion is not as slow):
+test = False # Set to True to only convert a piece of data (so conversion is not as slow for testing):
 if test:
     for x in range(xmin_scaled, xmax_scaled):
         for y in range(ymin_scaled, ymax_scaled):
@@ -109,13 +112,12 @@ print("CONVERTING array to dataset")
 # convert from dataarray to dataset (so it's like american data)
 cdataset = cdata[0, :, :].to_dataset(name = "Band1")
 
-# import American fuel data to use as reference
+# import American fuel data to use as reference for metadata
 american_file_path = "data/fccs_fuelload.nc"
 adataset = xr.open_dataset(american_file_path)
 
-
+# add metadata
 cdataset.attrs['Conventions'] = adataset.attrs['Conventions']
-
 print("Converting metadata")
 lcc = adataset.lambert_conformal_conic 
 lcc.attrs['Northernmost_Northing'] = cdata.y.values[0]
@@ -130,7 +132,7 @@ lcc.attrs['central_meridian'] = -95
 lcc.attrs['standard_parallel_1'] = 49
 lcc.attrs['standard_parallel_2'] = 77
 lcc.attrs['latitude_of_projection_origin'] = 49
-cdataset = cdataset.assign_coords(lambert_conformal_conic = lcc)
+cdataset = cdataset.assign(lambert_conformal_conic = lcc)
 cdataset = cdataset.drop_vars('band')
 cdataset = cdataset.drop_vars('x')
 cdataset = cdataset.drop_vars('y')
@@ -140,12 +142,10 @@ cdataset = cdataset.drop_vars('y')
 #print(cdataset.Band1.transform)
 #print(cdataset.Band1.attrs)
 #print(adataset.FCCS_FuelLoading)
-
 reso = list((g.GetGeoTransform()[1] * scale_factor, g.GetGeoTransform()[5] * scale_factor))
 trans = list((g.GetGeoTransform()[1] * scale_factor, g.GetGeoTransform()[2], g.GetGeoTransform()[0], g.GetGeoTransform()[4], g.GetGeoTransform()[5]*scale_factor, g.GetGeoTransform()[3]))
 gm = adataset.FCCS_FuelLoading.attrs['grid_mapping']
 ln = adataset.FCCS_FuelLoading.attrs['long_name']
-
 cdataset['Band1'] = cdataset.Band1.assign_attrs(res=reso)
 cdataset['Band1'] = cdataset.Band1.assign_attrs(transform=trans)
 cdataset['Band1'] = cdataset.Band1.assign_attrs(grid_mapping=gm)
