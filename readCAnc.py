@@ -13,8 +13,8 @@ from affine import Affine
 data = xr.open_dataset("data/fccs_canada.nc")
 print("FROM NC:")
 print(data)
-#data.Band1.plot()
-#plt.savefig('CAnc.png')
+data.Band1.plot()
+plt.savefig('CAnc.png')
 #print("FROM TIF")
 #canadian_file_path = "data/nat_fbpfuels_2014b.tif"
 #cdata = xr.open_rasterio(canadian_file_path)

@@ -152,7 +152,7 @@ cdataset['Band1'] = cdataset.Band1.assign_attrs(grid_mapping=gm)
 cdataset['Band1'] = cdataset.Band1.assign_attrs(long_name=ln)
 #print("FINAL DATASET")
 #print(cdataset.lambert_conformal_conic)
-#print(cdataset.Band1)
+print(cdataset)
 
 print("savings as netcdf")
 # save as netcdf
