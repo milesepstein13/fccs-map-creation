@@ -86,7 +86,7 @@ plt.savefig("CApre.png")
 cdata = cdata.reindex(y = cdata.y[::scale_factor], x = cdata.x[::scale_factor], method = 'nearest')
 
 # convert FBP fuel types to FCCS
-test = True # Set to True to only convert a piece of data (so conversion is not as slow for testing):
+test = False # Set to True to only convert a piece of data (so conversion is not as slow for testing):
 if test:
     for x in range(xmin_scaled, xmax_scaled):
         for y in range(ymin_scaled, ymax_scaled):
@@ -151,6 +151,7 @@ cdataset['Band1'] = cdataset.Band1.assign_attrs(res=reso)
 cdataset['Band1'] = cdataset.Band1.assign_attrs(transform=trans)
 cdataset['Band1'] = cdataset.Band1.assign_attrs(grid_mapping=gm)
 cdataset['Band1'] = cdataset.Band1.assign_attrs(long_name=ln)
+
 #print("FINAL DATASET")
 #print(cdataset.lambert_conformal_conic)
 print(cdataset)
