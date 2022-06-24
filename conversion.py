@@ -86,7 +86,7 @@ plt.savefig("CApre.png")
 cdata = cdata.reindex(y = cdata.y[::scale_factor], x = cdata.x[::scale_factor], method = 'nearest')
 
 # convert FBP fuel types to FCCS
-test = False # Set to True to only convert a piece of data (so conversion is not as slow for testing):
+test = True # Set to True to only convert a piece of data (so conversion is not as slow for testing):
 if test:
     for x in range(xmin_scaled, xmax_scaled):
         for y in range(ymin_scaled, ymax_scaled):
@@ -126,12 +126,13 @@ lcc.attrs['Easternmost_Easting'] = cdata.x.values[-1]
 lcc.attrs['Westernmost_Easting'] = cdata.x.values[0]
 lcc.attrs['spatial_ref'] = CRS.from_proj4(cdata.attrs['crs']).to_wkt()
 g = gdal.Open(canadian_file_path)
-geotransform = ([g.GetGeoTransform()[0], g.GetGeoTransform()[1] * scale_factor, g.GetGeoTransform()[2], g.GetGeoTransform()[3], g.GetGeoTransform()[4], g.GetGeoTransform()[5]*scale_factor])
+geotransform = [g.GetGeoTransform()[0], g.GetGeoTransform()[1] * scale_factor, g.GetGeoTransform()[2], g.GetGeoTransform()[3], g.GetGeoTransform()[4], g.GetGeoTransform()[5]*scale_factor]
+geotransform =  ' '.join(map(str, geotransform))
 lcc.attrs['GeoTransform'] = geotransform
-lcc.attrs['central_meridian'] = -95
-lcc.attrs['standard_parallel_1'] = 49
-lcc.attrs['standard_parallel_2'] = 77
-lcc.attrs['latitude_of_projection_origin'] = 49
+lcc.attrs['central_meridian'] = -95.0
+lcc.attrs['standard_parallel_1'] = 49.0
+lcc.attrs['standard_parallel_2'] = 77.0
+lcc.attrs['latitude_of_projection_origin'] = 49.0
 cdataset = cdataset.assign(lambert_conformal_conic = lcc)
 cdataset = cdataset.drop_vars('band')
 cdataset = cdataset.drop_vars('x')
@@ -162,4 +163,5 @@ cdataset.to_netcdf('data/fccs_canada.nc')
 plt.clf()
 cdataset.Band1[xmin_scaled:xmax_scaled, ymin_scaled:ymax_scaled].plot() 
 plt.savefig("CAdataset.png")
+print("geotransform: ", lcc.attrs['GeoTransform'])
 
