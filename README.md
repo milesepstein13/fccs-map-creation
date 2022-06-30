@@ -14,7 +14,7 @@ Run conversion.py to convert a tif with FBP fuels to a netCDF with fccs fuels. C
 
 # Changes I made to accomadate this new file (if things aren't working, check that this are all done)
 1. In fccsmap/fccsmap/lookup:
-    a) added a Canadian option to `FUEL_LOAD_NCS` following existing formatting
-    b) added `is_canada` (like `is_alaska`) in OPTIONS_STRING
-    c) `fuel_load_key` assignment logic handles `is_canada`
+    1. added a Canadian option to `FUEL_LOAD_NCS` following existing formatting
+    2. added `is_canada` (like `is_alaska`) in OPTIONS_STRING
+    3. `fuel_load_key` assignment logic handles `is_canada`
 2. In bluesky/modules/fuelbeds, add `FccsLookUp(is_canada=True, **Config().get('fuelbeds')) # Canada` to `FCCS_LOOKUPS`
